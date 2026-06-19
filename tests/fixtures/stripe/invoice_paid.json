@@ -1,0 +1,15 @@
+{
+  "id": "evt_invoice_paid_1",
+  "type": "invoice.paid",
+  "data": {
+    "object": {
+      "id": "in_123",
+      "customer": "cus_123",
+      "amount_paid": 1999,
+      "currency": "usd",
+      "status": "paid",
+      "hosted_invoice_url": "https://stripe.test/invoice/123",
+      "metadata": {}
+    }
+  }
+}

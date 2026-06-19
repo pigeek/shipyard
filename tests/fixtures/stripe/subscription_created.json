@@ -1,0 +1,15 @@
+{
+  "id": "evt_sub_created_1",
+  "type": "customer.subscription.created",
+  "data": {
+    "object": {
+      "id": "sub_123",
+      "customer": "cus_123",
+      "status": "active",
+      "current_period_end": 1893456000,
+      "cancel_at_period_end": false,
+      "metadata": {},
+      "items": { "data": [{ "price": { "id": "price_basic" } }] }
+    }
+  }
+}
