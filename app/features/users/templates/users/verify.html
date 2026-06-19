@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Verify email — {{ app_name }}{% endblock %}
+{% block content %}
+  <h1>Email verification</h1>
+  <div class="flash flash-{{ 'success' if verified else 'error' }}">{{ message }}</div>
+  <p><a href="/auth/login">Continue to log in</a></p>
+{% endblock %}

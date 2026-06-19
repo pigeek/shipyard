@@ -3,11 +3,8 @@ import os
 
 os.environ.setdefault("ENVIRONMENT", "testing")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-that-is-long-enough-32b")
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test_run.db")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")  # shared in-memory (StaticPool)
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
-
-import contextlib  # noqa: E402
-from pathlib import Path  # noqa: E402
 
 import httpx  # noqa: E402
 import pytest_asyncio  # noqa: E402
@@ -18,8 +15,6 @@ from app.core.registry import discover_features  # noqa: E402
 
 # Import every feature's models before create_all.
 discover_features()
-
-DB_FILE = Path("./test_run.db")
 
 
 class _FakeArqPool:
@@ -54,8 +49,3 @@ async def client(app_with_pool):
     transport = httpx.ASGITransport(app=app_with_pool)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
-
-
-def pytest_sessionfinish(session, exitstatus):
-    with contextlib.suppress(FileNotFoundError):
-        DB_FILE.unlink()

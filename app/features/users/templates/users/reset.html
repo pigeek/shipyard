@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Reset password — {{ app_name }}{% endblock %}
+{% block content %}
+  <h1>Reset your password</h1>
+  {% if done %}
+    <div class="flash flash-success">Your password has been reset.</div>
+    <p><a href="/auth/login">Log in</a> with your new password.</p>
+  {% else %}
+    {% if flash %}<div class="flash flash-{{ flash_level|default('error') }}">{{ flash }}</div>{% endif %}
+    <form action="/auth/reset" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="token" value="{{ token }}">
+      <label for="password">New password</label>
+      <input id="password" name="password" type="password" required autofocus>
+      <button class="primary" type="submit">Set new password</button>
+    </form>
+  {% endif %}
+{% endblock %}

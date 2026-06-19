@@ -25,15 +25,12 @@ async def send_verification_email(ctx: dict, user_id: str, token: str) -> None:
         user = await get_user_by_id(session, uuid.UUID(user_id))
         if user is None:
             return
-        link = f"{settings.base_url}/api/v1/auth/verify"
+        link = f"{settings.base_url}/auth/verify?token={token}"
         await send_email(
             session,
             to=user.email,
             subject="Verify your email",
-            html=(
-                "<p>Confirm your email by POSTing this token to "
-                f"<code>{link}</code>:</p><pre>{token}</pre>"
-            ),
+            html=(f'<p>Confirm your email address:</p><p><a href="{link}">Verify email</a></p>'),
             template="verify",
         )
 
@@ -43,14 +40,11 @@ async def send_password_reset_email(ctx: dict, user_id: str, token: str) -> None
         user = await get_user_by_id(session, uuid.UUID(user_id))
         if user is None:
             return
-        link = f"{settings.base_url}/api/v1/auth/reset-password"
+        link = f"{settings.base_url}/auth/reset?token={token}"
         await send_email(
             session,
             to=user.email,
             subject="Reset your password",
-            html=(
-                "<p>Reset your password by POSTing this token to "
-                f"<code>{link}</code>:</p><pre>{token}</pre>"
-            ),
+            html=(f'<p>Reset your password:</p><p><a href="{link}">Choose a new password</a></p>'),
             template="password_reset",
         )

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,7 +23,20 @@ class Settings(BaseSettings):
 
     # --- Auth ---
     access_token_lifetime_seconds: int = 3600
+    refresh_token_lifetime_seconds: int = 60 * 60 * 24 * 30  # 30 days
     cookie_secure: bool = False
+    # Which auth transports this deployment accepts (ADR 0001 §6). Disabling the
+    # cookie transport yields a bearer-only API with no CSRF surface; disabling
+    # bearer yields a cookie-only (SSR/SPA) deployment. At least one must be on.
+    auth_cookie_enabled: bool = True
+    auth_bearer_enabled: bool = True
+
+    # --- CORS (separate-origin / dev SPA) ---
+    cors_origins: list[str] = []
+
+    # --- OAuth (social login; mounted only when a provider is configured) ---
+    google_oauth_client_id: str = ""
+    google_oauth_client_secret: str = ""
 
     # --- Email ---
     email_backend: Literal["console", "smtp"] = "console"
@@ -38,6 +52,12 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_success_url: str = "http://localhost:8000/billing/success"
     stripe_cancel_url: str = "http://localhost:8000/billing/cancel"
+
+    @model_validator(mode="after")
+    def _at_least_one_transport(self) -> "Settings":
+        if not (self.auth_cookie_enabled or self.auth_bearer_enabled):
+            raise ValueError("At least one auth transport must be enabled.")
+        return self
 
     @property
     def is_production(self) -> bool:

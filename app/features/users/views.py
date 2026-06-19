@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_users.authentication import JWTStrategy
-from fastapi_users.exceptions import UserAlreadyExists
+from fastapi_users.exceptions import (
+    InvalidResetPasswordToken,
+    InvalidVerifyToken,
+    UserAlreadyExists,
+    UserAlreadyVerified,
+    UserInactive,
+)
 from starlette.responses import RedirectResponse
 
 from app.core.config import settings
@@ -75,7 +81,18 @@ async def login_submit(
 
 
 @router.post("/auth/logout")
-async def logout(request: Request, _csrf: None = Depends(verify_csrf)):
+async def logout(
+    request: Request,
+    _csrf: None = Depends(verify_csrf),
+    manager: UserManager = Depends(get_user_manager),
+    strategy: JWTStrategy = Depends(get_jwt_strategy),
+):
+    # Revoke the session token server-side, then clear the cookie.
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        user = await strategy.read_token(token, manager)
+        if user is not None:
+            await strategy.destroy_token(token, user)
     response = RedirectResponse("/", status_code=303)
     response.delete_cookie(COOKIE_NAME)
     return response
@@ -118,6 +135,67 @@ async def register_submit(
     response = RedirectResponse("/", status_code=303)
     _set_auth_cookie(response, token)
     return response
+
+
+@router.get("/auth/verify")
+async def verify_email(
+    request: Request,
+    token: str = "",
+    manager: UserManager = Depends(get_user_manager),
+):
+    """Click-through email verification landing page (Phase 7.6)."""
+    verified = False
+    message = "This verification link is invalid or has expired."
+    if token:
+        try:
+            await manager.verify(token)
+            verified = True
+            message = "Your email is verified — you can now log in."
+        except UserAlreadyVerified:
+            verified = True
+            message = "Your email was already verified."
+        except (InvalidVerifyToken, UserInactive):
+            pass
+    return render(
+        request,
+        "users/verify.html",
+        {"verified": verified, "message": message},
+        status_code=200 if verified else 400,
+    )
+
+
+@router.get("/auth/reset")
+async def reset_form(request: Request, token: str = ""):
+    """Password-reset landing page reached from the email link (Phase 7.6)."""
+    return render(request, "users/reset.html", {"token": token})
+
+
+@router.post("/auth/reset")
+async def reset_submit(
+    request: Request,
+    _csrf: None = Depends(verify_csrf),
+    manager: UserManager = Depends(get_user_manager),
+):
+    form = await request.form()
+    token = str(form.get("token", ""))
+    password = str(form.get("password", ""))
+    try:
+        await manager.reset_password(token, password)
+    except (InvalidResetPasswordToken, UserInactive):
+        return render(
+            request,
+            "users/reset.html",
+            {"token": token, "flash": "This reset link is invalid or has expired."},
+            status_code=400,
+        )
+    except Exception:  # password policy / validation
+        return render(
+            request,
+            "users/reset.html",
+            {"token": token, "flash": "Could not reset password. Check your new password."},
+            status_code=400,
+        )
+    return render(request, "users/reset.html", {"done": True})
 
 
 @router.get("/users/me")

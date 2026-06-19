@@ -3,6 +3,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Request
+from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
@@ -12,6 +13,8 @@ from app.core.config import settings
 from app.core.redis import close_arq_pool, init_arq_pool
 from app.core.registry import discover_features
 from app.features.users.dependencies import RequiresLogin, load_current_user
+from app.web.api_csrf import ApiCsrfMiddleware
+from app.web.spa import mount_spa
 from app.web.templating import render
 
 STATIC_DIR = Path(__file__).resolve().parent / "web" / "static"
@@ -26,6 +29,21 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
+    if settings.cors_origins:
+        # Separate-origin / Vite-dev SPA (ADR 0001 Phase 7.5). Credentialed CORS
+        # requires explicit origins (no "*") and, cross-site, the session cookie
+        # must be SameSite=None; Secure — see .env.example / README.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    if settings.auth_cookie_enabled:
+        # Transport-aware CSRF for /api/v1: only relevant when cookie auth is on
+        # (bearer-only deployments have no CSRF surface). See ADR 0001.
+        app.add_middleware(ApiCsrfMiddleware)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key,
@@ -54,6 +72,7 @@ def create_app() -> FastAPI:
             app.include_router(feature.ssr_router)
 
     setup_admin(app, features)
+    mount_spa(app)
     return app
 
 

@@ -10,7 +10,21 @@ adapters over a shared `service.py`, so business logic lives in one place.
 ## Stack
 
 FastAPI · SQLAlchemy 2.0 (async) · Alembic · fastapi-users (JWT + cookie) ·
-SQLAdmin · arq (Redis) · Jinja2 + HTMX · PostgreSQL · Redis · Stripe.
+SQLAdmin · arq (Redis) · Jinja2 + HTMX · PostgreSQL · Redis · Stripe ·
+Vite + React SPA (`/app`).
+
+## Auth & frontends
+
+One identity core, multiple shells (see `docs/adr/0001-frontend-auth-shells.md`):
+
+- **SSR** (Jinja+HTMX) on a httpOnly cookie session, plus a same-origin **React
+  SPA at `/app`** on the same cookie — no token in JS.
+- **Bearer + refresh tokens** for mobile/native/third-party, with server-side
+  revocation (`/api/v1/auth/jwt/{login,refresh,logout,logout-all}`).
+- **Transport-aware CSRF**: cookie-authenticated `/api/v1` mutations need a
+  double-submit `X-CSRF-Token`; bearer requests are exempt.
+- Active transports, CORS origins, and OAuth providers are all **configuration**
+  (`.env`); a provider/transport with no config simply isn't mounted.
 
 ## Quick start (Docker)
 
@@ -41,6 +55,20 @@ Create the first superuser:
 ```bash
 python -m app.cli createsuperuser admin@example.com
 ```
+
+### Frontend (React SPA at `/app`)
+
+The SPA is a Vite + React bundle served same-origin by FastAPI. Build it (the
+Docker image and CI do this automatically):
+
+```bash
+npm --prefix frontend install
+npm --prefix frontend run build      # → app/web/spa (served at /app)
+npm --prefix frontend run dev        # or: Vite dev server, proxying /api to :8000
+```
+
+If the bundle isn't built, `/app` simply 404s and the SPA tests skip — the SSR
+site is fully functional on its own.
 
 ## Project layout
 

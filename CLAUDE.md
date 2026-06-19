@@ -42,13 +42,24 @@ docs/adr/       architecture decisions
 
 ## Auth model (important)
 
-- Two transports both active: **cookie** (SSR, httpOnly `shipyardauth`) and
-  **bearer** (REST). API accepts either.
+- Two transports, both active by default: **cookie** (SSR, httpOnly
+  `shipyardauth`) and **bearer** (REST). API accepts either.
 - SSR protected routes use `ssr_required_user` → redirects logged-out browsers to
   `/auth/login?next=...` (303). REST uses `current_active_user` → 401.
-- CSRF is currently enforced **only on SSR Jinja form posts** (`verify_csrf`).
-  The API has no CSRF gate yet — see Phase 7.1 (transport-aware CSRF) before
-  shipping any cookie-auth SPA.
+- CSRF is **transport-aware** (ADR 0001 / Phase 7.1). SSR Jinja form posts use a
+  session token (`verify_csrf`). The REST API uses a double-submit cookie
+  (`ApiCsrfMiddleware`, `app/web/api_csrf.py`): mutating `/api/v1/*` requests
+  authenticated via the **cookie** must send a matching `X-CSRF-Token` header;
+  **bearer** requests are exempt.
+- Bearer tokens are **revocable with refresh** (`auth_router.py`, `tokens.py`):
+  `/api/v1/auth/jwt/{login,refresh,logout,logout-all}`. A `jti` + server-side
+  store (Redis in prod, in-memory under tests) back revocation; SSR logout
+  revokes the session token too.
+- Active transports are configuration (`auth_cookie_enabled` /
+  `auth_bearer_enabled`): the cookie-only deployment drops the bearer router; the
+  bearer-only deployment drops the SSR auth pages + CSRF surface.
+- Social login (Phase 7.7) is mounted only when a provider is configured
+  (`GOOGLE_OAUTH_*`); linked accounts live in `oauth_account`.
 
 ## Conventions
 
@@ -63,16 +74,22 @@ docs/adr/       architecture decisions
 ```bash
 uv venv && VIRTUAL_ENV=.venv uv pip install -e ".[dev]"   # install (note VIRTUAL_ENV)
 .venv/bin/ruff check app && .venv/bin/mypy app            # lint + types
-.venv/bin/python -m pytest -q                             # tests (slow: Argon2)
+.venv/bin/python -m pytest -q                             # tests (fast: ~1s, in-memory SQLite)
+npm --prefix frontend install && npm --prefix frontend run build   # build SPA → app/web/spa
 docker compose up --build                                 # full stack (api/worker/pg/redis)
 python -m app.cli createsuperuser <email> <password>      # admin user (avoid .local TLD)
 ```
 
-Admin at `/admin`, REST docs at `/docs`, SSR app at `/`.
+Admin at `/admin`, REST docs at `/docs`, SSR app at `/`, React SPA at `/app`
+(only when the bundle is built; the SPA tests skip otherwise).
+
+Tests run in ~1s: they use a shared in-memory SQLite (StaticPool, `core/db.py`)
+and weak Argon2 params in the testing env (`users/security.py`). Don't reintroduce
+a file-based test DB or default Argon2 cost in tests — that was the 2.5-min suite.
 
 ## Status
 
-Phases 0–6 + SSR redirect-to-login: **done, tested, committed**, and verified
-running in Docker. Next work is **Phase 7+** (frontend shells & auth hardening)
-in `docs/PLAN.md`, per `docs/adr/0001-frontend-auth-shells.md` — design is
-written, implementation not started.
+Phases 0–6 + **Phase 7 (frontend shells & auth hardening, all of 7.1–7.7)**:
+**done, lint + mypy + pytest green** (39 tests, migrations verified up/down).
+See `docs/PLAN.md` and `docs/adr/0001-frontend-auth-shells.md`. The React SPA
+bundle is a build artifact (built in CI / the Docker image), not committed.

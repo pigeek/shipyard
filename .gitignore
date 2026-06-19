@@ -21,3 +21,11 @@ coverage.xml
 .idea/
 .vscode/
 *.log
+
+# Frontend (SPA) — deps and build output; the bundle is built in CI / the image.
+frontend/node_modules/
+app/web/spa/
+test_run.db
+
+# TypeScript incremental build info (build artifact)
+frontend/tsconfig.tsbuildinfo

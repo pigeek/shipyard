@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.db import get_async_session
-from app.features.users.models import User
+from app.features.users.models import OAuthAccount, User
 from app.features.users.security import (
     COOKIE_NAME,
     get_jwt_strategy,
@@ -24,7 +24,7 @@ from app.features.users.security import (
 async def get_user_db(
     session: AsyncSession = Depends(get_async_session),
 ) -> AsyncGenerator[SQLAlchemyUserDatabase, None]:
-    yield SQLAlchemyUserDatabase(session, User)
+    yield SQLAlchemyUserDatabase(session, User, OAuthAccount)
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
@@ -78,4 +78,16 @@ cookie_backend = AuthenticationBackend(
     name="cookie", transport=cookie_transport, get_strategy=get_jwt_strategy
 )
 
-fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [jwt_backend, cookie_backend])
+
+def _enabled_backends() -> list[AuthenticationBackend]:
+    """Which transports the API authenticates with — a deployment choice
+    (ADR 0001 §6). The config validator guarantees at least one is enabled."""
+    backends: list[AuthenticationBackend] = []
+    if settings.auth_bearer_enabled:
+        backends.append(jwt_backend)
+    if settings.auth_cookie_enabled:
+        backends.append(cookie_backend)
+    return backends
+
+
+fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, _enabled_backends())

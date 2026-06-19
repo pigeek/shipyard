@@ -12,6 +12,7 @@
     <a class="brand" href="/">{{ app_name }}</a>
     <nav>
       {% if current_user %}
+        {% if spa_enabled %}<a href="/app">App</a>{% endif %}
         <a href="/teams">Teams</a>
         <a href="/users/me">{{ current_user.email }}</a>
         <form action="/auth/logout" method="post" class="inline">

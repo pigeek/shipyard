@@ -237,8 +237,12 @@ Each phase ends green (lint + types + tests pass) and is a logical commit point.
 Closes the gaps identified in **ADR 0001 — Frontend shells and authentication
 transports** (`docs/adr/0001-frontend-auth-shells.md`). Target end state:
 same-origin React at `/app` on a cookie session, mobile/native on bearer+refresh,
-one API, **transport-aware CSRF**. Design-only until scheduled; still phased so
-each step lands green.
+one API, **transport-aware CSRF**.
+
+> **Status: Phase 7.1–7.7 implemented** — lint + mypy + pytest green. Also fixed
+> the slow test suite (file-based SQLite + default Argon2 → shared in-memory
+> SQLite + weak test-only Argon2; ~2.5 min → ~1 s). The Vite/React bundle is a
+> build artifact (CI / Docker image), not committed.
 
 Ordering rule: the **security primitives (7.1–7.2) must land before the React
 SPA (7.4) is exposed to real traffic**, because the SPA is the first cookie-auth

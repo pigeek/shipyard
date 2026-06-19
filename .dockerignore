@@ -12,3 +12,5 @@ docs
 tests
 htmlcov
 .coverage
+frontend/node_modules
+app/web/spa
