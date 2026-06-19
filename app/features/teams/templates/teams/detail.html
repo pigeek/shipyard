@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} — {{ app_name }}{% endblock %}
+{% block content %}
+  <p><a href="/teams">← All teams</a></p>
+  <h1>{{ team.name }}</h1>
+  <p>Your role: <strong>{{ my_role }}</strong></p>
+
+  <div class="card">
+    <h2>Members</h2>
+    <table>
+      <thead><tr><th>Email</th><th>Role</th>{% if can_manage %}<th></th>{% endif %}</tr></thead>
+      <tbody>
+      {% for m in members %}
+        <tr>
+          <td>{{ m.user.email }}</td>
+          <td>{{ m.role.value }}</td>
+          {% if can_manage %}
+            <td>
+              <form action="/teams/{{ team.id }}/members/{{ m.user_id }}/remove" method="post" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="linkbtn" type="submit">Remove</button>
+              </form>
+            </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if can_manage %}
+  <div class="card">
+    <h2>Add member</h2>
+    <form action="/teams/{{ team.id }}/members" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="email">User email</label>
+      <input id="email" name="email" type="email" required>
+      <label for="role">Role</label>
+      <select id="role" name="role">
+        {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+      </select>
+      <button class="primary" type="submit">Add</button>
+    </form>
+  </div>
+  {% endif %}
+{% endblock %}

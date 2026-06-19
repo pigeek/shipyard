@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Teams — {{ app_name }}{% endblock %}
+{% block content %}
+  <h1>Your teams</h1>
+  {% if teams %}
+    <ul>
+      {% for team in teams %}
+        <li><a href="/teams/{{ team.id }}">{{ team.name }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>You're not part of any team yet.</p>
+  {% endif %}
+
+  <div class="card">
+    <h2>Create a team</h2>
+    <form action="/teams" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label for="name">Team name</label>
+      <input id="name" name="name" required>
+      <button class="primary" type="submit">Create</button>
+    </form>
+  </div>
+{% endblock %}
