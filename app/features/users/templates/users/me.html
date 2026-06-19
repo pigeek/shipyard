@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Profile — {{ app_name }}{% endblock %}
+{% block content %}
+  <h1>Your profile</h1>
+  <div class="card">
+    <table>
+      <tr><th>Email</th><td>{{ user.email }}</td></tr>
+      <tr><th>Verified</th><td>{{ "yes" if user.is_verified else "no" }}</td></tr>
+      <tr><th>Superuser</th><td>{{ "yes" if user.is_superuser else "no" }}</td></tr>
+      <tr><th>Member since</th><td>{{ user.created_at.strftime("%Y-%m-%d") }}</td></tr>
+    </table>
+  </div>
+{% endblock %}

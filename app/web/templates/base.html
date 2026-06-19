@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">{{ app_name }}</a>
+    <nav>
+      {% if current_user %}
+        <a href="/teams">Teams</a>
+        <a href="/users/me">{{ current_user.email }}</a>
+        <form action="/auth/logout" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="linkbtn">Log out</button>
+        </form>
+      {% else %}
+        <a href="/auth/login">Log in</a>
+        <a href="/auth/register">Sign up</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% block flash %}
+      {% if flash %}<div class="flash flash-{{ flash_level|default('info') }}">{{ flash }}</div>{% endif %}
+    {% endblock %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
