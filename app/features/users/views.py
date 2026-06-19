@@ -5,7 +5,10 @@ from fastapi_users.exceptions import UserAlreadyExists
 from starlette.responses import RedirectResponse
 
 from app.core.config import settings
-from app.features.users.dependencies import current_active_user, load_current_user
+from app.features.users.dependencies import (
+    load_current_user,
+    ssr_required_user,
+)
 from app.features.users.manager import UserManager, get_user_manager
 from app.features.users.models import User
 from app.features.users.schemas import UserCreate
@@ -14,6 +17,13 @@ from app.web.csrf import verify_csrf
 from app.web.templating import render
 
 router = APIRouter(tags=["users-ssr"])
+
+
+def _safe_next(value: str | None) -> str:
+    """Only allow local, single-slash redirect targets (avoid open redirects)."""
+    if value and value.startswith("/") and not value.startswith("//"):
+        return value
+    return "/"
 
 
 def _set_auth_cookie(response: RedirectResponse, token: str) -> None:
@@ -28,10 +38,10 @@ def _set_auth_cookie(response: RedirectResponse, token: str) -> None:
 
 
 @router.get("/auth/login")
-async def login_form(request: Request, user=Depends(load_current_user)):
+async def login_form(request: Request, next: str = "/", user=Depends(load_current_user)):
     if user is not None:
-        return RedirectResponse("/", status_code=303)
-    return render(request, "users/login.html")
+        return RedirectResponse(_safe_next(next), status_code=303)
+    return render(request, "users/login.html", {"next": _safe_next(next)})
 
 
 @router.post("/auth/login")
@@ -42,6 +52,7 @@ async def login_submit(
     strategy: JWTStrategy = Depends(get_jwt_strategy),
 ):
     form = await request.form()
+    next_url = _safe_next(str(form.get("next", "/")))
     credentials = OAuth2PasswordRequestForm(
         username=str(form.get("email", "")), password=str(form.get("password", ""))
     )
@@ -50,11 +61,15 @@ async def login_submit(
         return render(
             request,
             "users/login.html",
-            {"flash": "Invalid email or password.", "flash_level": "error"},
+            {
+                "flash": "Invalid email or password.",
+                "flash_level": "error",
+                "next": next_url,
+            },
             status_code=400,
         )
     token = await strategy.write_token(user)
-    response = RedirectResponse("/", status_code=303)
+    response = RedirectResponse(next_url, status_code=303)
     _set_auth_cookie(response, token)
     return response
 
@@ -106,9 +121,5 @@ async def register_submit(
 
 
 @router.get("/users/me")
-async def profile(
-    request: Request,
-    user: User = Depends(current_active_user),
-    _state=Depends(load_current_user),
-):
+async def profile(request: Request, user: User = Depends(ssr_required_user)):
     return render(request, "users/me.html", {"user": user})

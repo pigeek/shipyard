@@ -1,15 +1,17 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, Request
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
 from starlette.staticfiles import StaticFiles
 
 from app.admin.setup import setup_admin
 from app.core.config import settings
 from app.core.redis import close_arq_pool, init_arq_pool
 from app.core.registry import discover_features
-from app.features.users.dependencies import load_current_user
+from app.features.users.dependencies import RequiresLogin, load_current_user
 from app.web.templating import render
 
 STATIC_DIR = Path(__file__).resolve().parent / "web" / "static"
@@ -31,6 +33,10 @@ def create_app() -> FastAPI:
         same_site="lax",
     )
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.exception_handler(RequiresLogin)
+    async def _redirect_to_login(request: Request, exc: RequiresLogin):
+        return RedirectResponse(f"/auth/login?next={quote(exc.next_url, safe='')}", status_code=303)
 
     from app.core.health import router as health_router
 

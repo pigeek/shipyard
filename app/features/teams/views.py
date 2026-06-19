@@ -7,10 +7,10 @@ from starlette.responses import RedirectResponse
 
 from app.core.db import get_async_session
 from app.features.teams import service
-from app.features.teams.dependencies import get_team_context, require_role
+from app.features.teams.dependencies import get_team_context_ssr, require_role_ssr
 from app.features.teams.models import ROLE_RANK, Team, TeamMembership, TeamRole
 from app.features.teams.service import TeamServiceError
-from app.features.users.dependencies import current_active_user, load_current_user
+from app.features.users.dependencies import ssr_required_user
 from app.features.users.models import User
 from app.web.csrf import verify_csrf
 from app.web.templating import render
@@ -21,9 +21,8 @@ router = APIRouter(tags=["teams-ssr"])
 @router.get("/teams")
 async def teams_list(
     request: Request,
-    user: User = Depends(current_active_user),
+    user: User = Depends(ssr_required_user),
     session: AsyncSession = Depends(get_async_session),
-    _state=Depends(load_current_user),
 ):
     teams = await service.list_teams_for_user(session, user)
     return render(request, "teams/list.html", {"teams": teams})
@@ -33,7 +32,7 @@ async def teams_list(
 async def teams_create(
     request: Request,
     _csrf: None = Depends(verify_csrf),
-    user: User = Depends(current_active_user),
+    user: User = Depends(ssr_required_user),
     session: AsyncSession = Depends(get_async_session),
 ):
     form = await request.form()
@@ -44,9 +43,8 @@ async def teams_create(
 @router.get("/teams/{team_id}")
 async def team_detail(
     request: Request,
-    context: tuple[Team, TeamMembership] = Depends(get_team_context),
+    context: tuple[Team, TeamMembership] = Depends(get_team_context_ssr),
     session: AsyncSession = Depends(get_async_session),
-    _state=Depends(load_current_user),
 ):
     team, membership = context
     members = await service.list_members(session, team.id)
@@ -68,7 +66,7 @@ async def team_detail(
 async def team_add_member(
     request: Request,
     _csrf: None = Depends(verify_csrf),
-    context: tuple[Team, TeamMembership] = Depends(require_role(TeamRole.admin)),
+    context: tuple[Team, TeamMembership] = Depends(require_role_ssr(TeamRole.admin)),
     session: AsyncSession = Depends(get_async_session),
 ):
     team, _membership = context
@@ -106,7 +104,7 @@ async def team_remove_member(
     user_id: uuid.UUID,
     request: Request,
     _csrf: None = Depends(verify_csrf),
-    context: tuple[Team, TeamMembership] = Depends(require_role(TeamRole.admin)),
+    context: tuple[Team, TeamMembership] = Depends(require_role_ssr(TeamRole.admin)),
     session: AsyncSession = Depends(get_async_session),
 ):
     team, _membership = context

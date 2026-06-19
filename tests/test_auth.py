@@ -55,3 +55,56 @@ async def test_ssr_register_sets_cookie_and_profile(client):
 async def test_protected_route_requires_auth(client):
     r = await client.get("/api/v1/users/me")
     assert r.status_code == 401
+
+
+async def test_ssr_protected_redirects_to_login(client):
+    # Logged-out SSR page bounces to login with a next= param (not a 401).
+    r = await client.get("/users/me", follow_redirects=False)
+    assert r.status_code == 303
+    location = r.headers["location"]
+    assert location.startswith("/auth/login?next=")
+    assert "%2Fusers%2Fme" in location
+
+
+async def test_login_honors_next(client):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "next@b.com", "password": "supersecret1"},
+    )
+    form = await client.get("/auth/login?next=/teams")
+    csrf = re.search(r'name="csrf_token" value="([^"]+)"', form.text).group(1)
+    assert 'name="next" value="/teams"' in form.text
+
+    r = await client.post(
+        "/auth/login",
+        data={
+            "email": "next@b.com",
+            "password": "supersecret1",
+            "csrf_token": csrf,
+            "next": "/teams",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/teams"
+
+
+async def test_login_rejects_offsite_next(client):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "safe@b.com", "password": "supersecret1"},
+    )
+    form = await client.get("/auth/login")
+    csrf = re.search(r'name="csrf_token" value="([^"]+)"', form.text).group(1)
+    r = await client.post(
+        "/auth/login",
+        data={
+            "email": "safe@b.com",
+            "password": "supersecret1",
+            "csrf_token": csrf,
+            "next": "//evil.com",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+    assert r.headers["location"] == "/"
