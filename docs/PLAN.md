@@ -229,3 +229,86 @@ Each phase ends green (lint + types + tests pass) and is a logical commit point.
 - CSRF strategy for the SSR tree (token in session + hidden field).
 - Admin views follow the same implicit rule (a feature's `admin.py` registers if
   present); confirm that's the desired behavior vs. a separate gate.
+
+---
+
+## Phase 7+ — Frontend shells & auth hardening
+
+Closes the gaps identified in **ADR 0001 — Frontend shells and authentication
+transports** (`docs/adr/0001-frontend-auth-shells.md`). Target end state:
+same-origin React at `/app` on a cookie session, mobile/native on bearer+refresh,
+one API, **transport-aware CSRF**. Design-only until scheduled; still phased so
+each step lands green.
+
+Ordering rule: the **security primitives (7.1–7.2) must land before the React
+SPA (7.4) is exposed to real traffic**, because the SPA is the first cookie-auth
+client to issue API mutations.
+
+### Phase 7.1 — Transport-aware CSRF (blocking prerequisite)
+- Add a dependency/middleware that, on `POST/PUT/PATCH/DELETE` to `/api/v1/*`,
+  enforces CSRF **only when the request authenticated via the cookie** and
+  **exempts bearer-authenticated requests**.
+- Mechanism: double-submit token (cookie-readable CSRF cookie + `X-CSRF-Token`
+  header) or required custom header; pick one and document why.
+- Detect transport explicitly (presence of `Authorization` header vs session
+  cookie) rather than inferring.
+- Tests: cookie mutation without token → 403; with token → 200; bearer mutation
+  without token → 200 (exempt); cross-site `SameSite` behaviour asserted.
+- **Exit:** mobile (bearer) is unaffected; cookie clients must present a token.
+
+### Phase 7.2 — Refresh tokens + Redis revocation
+- Introduce a refresh-token flow for bearer clients (`/api/v1/auth/jwt/refresh`),
+  short-lived access + longer-lived refresh.
+- Swap the stateless access strategy for a Redis-backed strategy (or maintain a
+  denylist) so tokens can be revoked server-side.
+- Logout becomes real: revoke the active token(s); "log out everywhere" clears a
+  user's refresh tokens.
+- Reuse the same store for cookie-session revocation.
+- **Exit:** tokens are refreshable and revocable; SSR logout and API logout both
+  invalidate server-side.
+
+### Phase 7.3 — Auth transport decision made explicit
+- Make "does the API accept cookie auth" a deliberate, documented setting rather
+  than implicit. Default: accept both (cookie web + bearer mobile).
+- A deployment may run bearer-only by not mounting the cookie backend (no CSRF
+  surface) — wire this as a config path, not a code edit.
+- **Exit:** the active transports for a deployment are configuration, consistent
+  with the implicit-surface philosophy.
+
+### Phase 7.4 — React SPA shell at `/app` (app-level, not a feature)
+- Add a frontend build (Vite + React) producing a static bundle.
+- Serve it from FastAPI: static assets + a `/app/*` catch-all returning
+  `index.html` (client-side routing). Mounted like `/admin`, not in a feature.
+- Post-login redirect target becomes `/app` for the hybrid shell; `next`
+  honoured within the app boundary.
+- SPA bootstraps identity via `GET /api/v1/users/me` (cookie); optional inlined
+  bootstrap JSON to skip the first round trip.
+- CI: build the bundle; image includes it.
+- **Exit:** SSR landing/auth → cookie → React app, same origin, no token in JS.
+
+### Phase 7.5 — CORS for separate-origin / dev
+- Add CORS middleware (allow-credentials, explicit origins) for the Vite dev
+  server and the separate-origin SPA option.
+- Document the `SameSite=None; Secure` cookie requirement for cross-origin
+  cookie sessions.
+- **Exit:** local React dev against the API works; separate-origin deploy is a
+  documented, supported option.
+
+### Phase 7.6 — Verify / reset landing pages per shell
+- Replace the "POST this token" emails with links to real pages:
+  SSR (`/auth/verify`, `/auth/reset`) and/or SPA (`/app/verify`, `/app/reset`)
+  that call the API.
+- Choose link target based on the deployment's active shell.
+- **Exit:** email verification and password reset are click-through flows in
+  whichever shell is shipped.
+
+### Phase 7.7 — OAuth / social login (both shells)
+- Wire the scaffolded OAuth backends; expose for SSR (redirect flow) and SPA
+  (authorization-code flow), reusing the same user store.
+- **Exit:** social login works from the web shell; tokens issued via the same
+  identity core.
+
+### Deferred / explicitly out of scope for 7.x
+- WebSockets/ASGI push, i18n, Kubernetes manifests (still infra-ready, not wired).
+- Native mobile app scaffolding (consumes the bearer+refresh API; not part of
+  this repo).
