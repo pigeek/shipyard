@@ -1,3 +1,4 @@
+import contextlib
 import uuid
 
 from fastapi import APIRouter, Depends, Request
@@ -109,8 +110,6 @@ async def team_remove_member(
     session: AsyncSession = Depends(get_async_session),
 ):
     team, _membership = context
-    try:
+    with contextlib.suppress(TeamServiceError):
         await service.remove_member(session, team_id=team.id, user_id=user_id)
-    except TeamServiceError:
-        pass
     return RedirectResponse(f"/teams/{team.id}", status_code=303)

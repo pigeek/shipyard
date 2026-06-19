@@ -94,9 +94,12 @@ async def change_role(
     membership = await get_membership(session, team_id, user_id)
     if membership is None:
         raise TeamServiceError("Not a member of this team.")
-    if membership.role == TeamRole.owner and role != TeamRole.owner:
-        if await _count_owners(session, team_id) <= 1:
-            raise TeamServiceError("A team must keep at least one owner.")
+    if (
+        membership.role == TeamRole.owner
+        and role != TeamRole.owner
+        and await _count_owners(session, team_id) <= 1
+    ):
+        raise TeamServiceError("A team must keep at least one owner.")
     membership.role = role
     await session.commit()
     await session.refresh(membership)

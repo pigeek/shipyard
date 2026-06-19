@@ -9,7 +9,7 @@ from app.core.models import Base, TimestampMixin, UUIDMixin
 from app.features.users.models import User
 
 
-class TeamRole(str, enum.Enum):
+class TeamRole(enum.StrEnum):
     owner = "owner"
     admin = "admin"
     member = "member"
