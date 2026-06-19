@@ -1,9 +1,11 @@
+from types import ModuleType
+
 import stripe
 
 from app.core.config import settings
 
 
-def get_stripe() -> "stripe":
+def get_stripe() -> ModuleType:
     """Return the stripe module configured with the current API key."""
     stripe.api_key = settings.stripe_api_key
     return stripe

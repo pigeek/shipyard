@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: shipyard
+          POSTGRES_PASSWORD: shipyard
+          POSTGRES_DB: shipyard_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shipyard"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    env:
+      ENVIRONMENT: testing
+      SECRET_KEY: ci-secret-key-that-is-long-enough-32bytes
+      DATABASE_URL: postgresql+asyncpg://shipyard:shipyard@localhost:5432/shipyard_test
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv pip install --system -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: |
+          ruff check app tests alembic
+          ruff format --check app tests alembic
+
+      - name: Type check (mypy)
+        run: mypy app
+
+      - name: Run migrations
+        run: alembic upgrade head
+
+      - name: Tests
+        run: pytest -q

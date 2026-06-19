@@ -7,7 +7,9 @@ from app.features.users.models import User
 
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
-    result = await session.execute(select(User).where(User.email == email.lower().strip()))
+    result = await session.execute(
+        select(User).where(User.email == email.lower().strip())  # type: ignore[arg-type]
+    )
     return result.scalar_one_or_none()
 
 

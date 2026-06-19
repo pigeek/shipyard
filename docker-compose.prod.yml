@@ -1,0 +1,37 @@
+# Production overrides: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Secrets are read from the host environment (no defaults).
+x-prod-env: &prod-env
+  ENVIRONMENT: production
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  REDIS_URL: ${REDIS_URL:?REDIS_URL is required}
+  BASE_URL: ${BASE_URL:?BASE_URL is required}
+  COOKIE_SECURE: "true"
+  EMAIL_BACKEND: smtp
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  EMAIL_FROM: ${EMAIL_FROM}
+  STRIPE_API_KEY: ${STRIPE_API_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+
+services:
+  postgres:
+    ports: []
+    restart: always
+
+  redis:
+    ports: []
+    restart: always
+
+  api:
+    restart: always
+    environment:
+      <<: *prod-env
+      RUN_MIGRATIONS: "1"
+
+  worker:
+    restart: always
+    environment:
+      <<: *prod-env

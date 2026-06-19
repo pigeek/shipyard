@@ -5,6 +5,10 @@ feature** on separate URL trees, over a single shared business-logic layer.
 Which surfaces a feature exposes is **implicit** — determined by which routers
 the feature actually defines, not by any central config.
 
+> **Status: fully implemented.** All phases below are built, linted (ruff),
+> type-checked (mypy), and covered by a passing pytest suite. The task queue is
+> **arq** (not Celery). See the git history for per-phase commits.
+
 ---
 
 ## 1. Confirmed stack

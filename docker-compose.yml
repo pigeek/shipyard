@@ -1,0 +1,58 @@
+x-app-env: &app-env
+  ENVIRONMENT: development
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
+  DATABASE_URL: postgresql+asyncpg://shipyard:shipyard@postgres:5432/shipyard
+  REDIS_URL: redis://redis:6379/0
+  BASE_URL: http://localhost:8000
+  EMAIL_BACKEND: console
+  STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: shipyard
+      POSTGRES_PASSWORD: shipyard
+      POSTGRES_DB: shipyard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shipyard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  worker:
+    build: .
+    environment:
+      <<: *app-env
+    command: ["arq", "app.worker.WorkerSettings"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  pgdata:

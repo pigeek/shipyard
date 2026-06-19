@@ -19,7 +19,7 @@ from app.features.users.security import password_helper
 
 async def create_superuser(email: str, password: str) -> None:
     async with async_session_maker() as session:
-        user_db = SQLAlchemyUserDatabase(session, User)
+        user_db: SQLAlchemyUserDatabase = SQLAlchemyUserDatabase(session, User)
         manager = UserManager(user_db, password_helper)
         user = await manager.create(
             UserCreate(
