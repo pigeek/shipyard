@@ -7,6 +7,26 @@ Surfaces are implicit: a feature is exposed by the routers it defines —
 `api.py` → REST under `/api/v1`, `views.py` → SSR HTML under `/`. Both are thin
 adapters over a shared `service.py`, so business logic lives in one place.
 
+## Use this as a template
+
+This repo is a **seed**: kick off a new project from it without forking the name.
+
+1. Click **Use this template** on GitHub (or `gh repo create my-app --template <owner>/shipyard`).
+   The template button gives the new repo a fresh, single-commit history.
+2. Clone it and run the one-shot bootstrap, then delete the script:
+
+   ```bash
+   python scripts/init.py --name my-app --display "My App"
+   rm scripts/init.py
+   ```
+
+`scripts/init.py` renames `shipyard`/`Shipyard` (package, DB, S3 bucket, auth
+cookie, app name) across every tracked file, resets the version to `0.1.0`,
+writes a `.env` from `.env.example` with a freshly generated `SECRET_KEY`, and
+clears the seed's project-status note. Pass `--fresh-git` if you cloned rather
+than using the template button and want a clean history. It only touches
+git-tracked files and prints exactly what it changed.
+
 ## Stack
 
 FastAPI · SQLAlchemy 2.0 (async) · Alembic · fastapi-users (JWT + cookie) ·
