@@ -149,9 +149,7 @@ async def test_team_scoped_upload_visible_to_member_not_outsider(client):
 
     # The outsider cannot see or reach the team file.
     assert (await client.get("/api/v1/files", headers=outsider)).json() == []
-    blocked = await client.get(
-        f"/api/v1/files/{body['file']['id']}/download-url", headers=outsider
-    )
+    blocked = await client.get(f"/api/v1/files/{body['file']['id']}/download-url", headers=outsider)
     assert blocked.status_code == 404
 
 

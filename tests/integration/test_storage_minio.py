@@ -14,7 +14,6 @@ import uuid
 
 import httpx
 import pytest
-
 from app.core.config import settings
 from app.core.storage import S3Backend
 

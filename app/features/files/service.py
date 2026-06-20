@@ -76,9 +76,7 @@ async def start_upload(
     return stored, cred
 
 
-async def _get_accessible(
-    session: AsyncSession, file_id: uuid.UUID, user: User
-) -> StoredFile:
+async def _get_accessible(session: AsyncSession, file_id: uuid.UUID, user: User) -> StoredFile:
     stored = await session.get(StoredFile, file_id)
     if stored is None:
         raise FileServiceError("File not found", status_code=404)
