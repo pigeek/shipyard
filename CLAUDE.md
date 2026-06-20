@@ -141,7 +141,10 @@ a file-based test DB or default Argon2 cost in tests — that was the 2.5-min su
 ## Status
 
 Phases 0–6 + **Phase 7 (frontend shells & auth hardening, all of 7.1–7.7)** +
-**object storage (S3/MinIO seam + `files` feature)**: **done, lint + mypy +
-pytest green** (51 tests, migrations verified up/down). See `docs/PLAN.md` and
+**object storage (S3/MinIO seam + `files` feature)** + **WebSockets/ASGI push**
+(realtime seam + `/ws/<feature>` surface) + **i18n** (gettext SSR + react-i18next
+SPA + shared locale negotiation): **done, lint + mypy + pytest green** (72 tests,
+migrations verified up/down). Frontend uses **pnpm**. See `docs/PLAN.md` and
 `docs/adr/0001-frontend-auth-shells.md`. The React SPA bundle is a build
-artifact (built in CI / the Docker image), not committed.
+artifact (built in CI / the Docker image), not committed. Of the original
+deferred set only **Kubernetes manifests** remain unwired.

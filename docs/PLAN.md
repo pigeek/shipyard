@@ -218,8 +218,10 @@ Each phase ends green (lint + types + tests pass) and is a logical commit point.
 - **Security:** secrets from env only; Argon2 password hashing (pwdlib via
   fastapi-users); HTTP-only/secure/samesite cookies for SSR sessions; CSRF
   protection on SSR form posts.
-- **Deferred (infra-ready, not pre-wired):** OAuth/social login, WebSockets/ASGI
-  push, i18n, Kubernetes manifests.
+- **Now shipped (were deferred):** OAuth/social login (Phase 7.7), WebSockets/ASGI
+  push (realtime seam + `/ws/<feature>` surface), i18n (gettext SSR +
+  react-i18next SPA + shared locale negotiation).
+- **Deferred (infra-ready, not pre-wired):** Kubernetes manifests.
 
 ---
 
@@ -313,6 +315,7 @@ client to issue API mutations.
   identity core.
 
 ### Deferred / explicitly out of scope for 7.x
-- WebSockets/ASGI push, i18n, Kubernetes manifests (still infra-ready, not wired).
+- WebSockets/ASGI push and i18n have since been wired (see §6 "Now shipped").
+  Kubernetes manifests remain infra-ready but not provided.
 - Native mobile app scaffolding (consumes the bearer+refresh API; not part of
   this repo).
