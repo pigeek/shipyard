@@ -95,7 +95,7 @@ docs/adr/       architecture decisions
 
 ```bash
 uv venv && VIRTUAL_ENV=.venv uv pip install -e ".[dev]"   # install (note VIRTUAL_ENV)
-.venv/bin/ruff check app && .venv/bin/mypy app            # lint + types
+.venv/bin/ruff check app tests alembic && .venv/bin/ruff format --check app tests alembic && .venv/bin/mypy app   # lint + format + types (matches CI)
 .venv/bin/python -m pytest -q                             # tests (fast: ~1s, in-memory SQLite)
 npm --prefix frontend install && npm --prefix frontend run build   # build SPA → app/web/spa
 docker compose up --build                                 # full stack (api/worker/pg/redis)
