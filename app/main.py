@@ -10,6 +10,8 @@ from starlette.staticfiles import StaticFiles
 
 from app.admin.setup import setup_admin
 from app.core.config import settings
+from app.core.i18n import LOCALE_COOKIE
+from app.core.i18n import is_supported as is_supported_locale
 from app.core.realtime import get_realtime_hub
 from app.core.redis import close_arq_pool, init_arq_pool
 from app.core.registry import discover_features
@@ -72,6 +74,27 @@ def create_app() -> FastAPI:
     @app.get("/")
     async def index(request: Request, user=Depends(load_current_user)):
         return render(request, "index.html")
+
+    @app.get("/i18n/set")
+    async def set_locale(request: Request, lng: str, next: str = "/"):
+        """Switch the active locale by setting the shared ``locale`` cookie.
+
+        Same-origin SSR and the SPA both read this cookie, so one switch covers
+        both surfaces. Only same-site ``next`` paths are honored (open-redirect
+        guard); unsupported locales are ignored.
+        """
+        target = next if next.startswith("/") and not next.startswith("//") else "/"
+        response = RedirectResponse(target, status_code=303)
+        if is_supported_locale(lng):
+            response.set_cookie(
+                LOCALE_COOKIE,
+                lng,
+                max_age=60 * 60 * 24 * 365,
+                httponly=False,  # the SPA (JS) reads it too
+                samesite="lax",
+                secure=settings.cookie_secure,
+            )
+        return response
 
     features = discover_features()
     for feature in features:

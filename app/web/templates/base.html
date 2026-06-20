@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_locale|default('en') }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,16 +12,23 @@
     <a class="brand" href="/">{{ app_name }}</a>
     <nav>
       {% if current_user %}
-        {% if spa_enabled %}<a href="/app">App</a>{% endif %}
-        <a href="/teams">Teams</a>
+        {% if spa_enabled %}<a href="/app">{{ _("App") }}</a>{% endif %}
+        <a href="/teams">{{ _("Teams") }}</a>
         <a href="/users/me">{{ current_user.email }}</a>
         <form action="/auth/logout" method="post" class="inline">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="linkbtn">Log out</button>
+          <button type="submit" class="linkbtn">{{ _("Log out") }}</button>
         </form>
       {% else %}
-        <a href="/auth/login">Log in</a>
-        <a href="/auth/register">Sign up</a>
+        <a href="/auth/login">{{ _("Log in") }}</a>
+        <a href="/auth/register">{{ _("Sign up") }}</a>
+      {% endif %}
+      {% if supported_locales|length > 1 %}
+        <span class="locale-switch">
+          {% for loc in supported_locales %}
+            {% if loc == current_locale %}<strong>{{ loc }}</strong>{% else %}<a href="/i18n/set?lng={{ loc }}&next={{ request.url.path }}">{{ loc }}</a>{% endif %}
+          {% endfor %}
+        </span>
       {% endif %}
     </nav>
   </header>

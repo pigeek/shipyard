@@ -1,0 +1,65 @@
+# French translations for Shipyard.
+# Copyright (C) 2026 Shipyard
+# This file is distributed under the same license as the Shipyard project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Shipyard\n"
+"Language: fr\n"
+"Language-Team: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+msgid "Welcome aboard!"
+msgstr "Bienvenue à bord !"
+
+msgid "Verify your email"
+msgstr "Vérifiez votre adresse e-mail"
+
+msgid "Confirm your email address:"
+msgstr "Confirmez votre adresse e-mail :"
+
+msgid "Verify email"
+msgstr "Vérifier l'e-mail"
+
+msgid "Reset your password"
+msgstr "Réinitialisez votre mot de passe"
+
+msgid "Reset your password:"
+msgstr "Réinitialisez votre mot de passe :"
+
+msgid "Choose a new password"
+msgstr "Choisir un nouveau mot de passe"
+
+msgid "App"
+msgstr "Application"
+
+msgid "Teams"
+msgstr "Équipes"
+
+msgid "Log out"
+msgstr "Déconnexion"
+
+msgid "Log in"
+msgstr "Connexion"
+
+msgid "Sign up"
+msgstr "S'inscrire"
+
+msgid "A FastAPI boilerplate with configurable SSR + REST surfaces."
+msgstr "Un boilerplate FastAPI avec des surfaces SSR + REST configurables."
+
+msgid "Get started"
+msgstr "Commencer"
+
+msgid "or"
+msgstr "ou"
+
+msgid "log in"
+msgstr "se connecter"
+
+msgid "Welcome back"
+msgstr "Bon retour"

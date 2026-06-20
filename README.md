@@ -91,6 +91,25 @@ pnpm -C frontend run dev        # or: Vite dev server, proxying /api to :8000
 If the bundle isn't built, `/app` simply 404s and the SPA tests skip — the SSR
 site is fully functional on its own.
 
+## Internationalization (i18n)
+
+One locale negotiation shared across surfaces (`user.locale` → `locale` cookie →
+`Accept-Language` → `DEFAULT_LOCALE`). SSR uses gettext (`{{ _("…") }}` /
+`{% trans %}`); the React SPA uses react-i18next; both read the same `locale`
+cookie, and `GET /i18n/set?lng=fr` switches it. Catalogs live in
+`app/locales/<locale>/LC_MESSAGES/`; the compiled `.mo` is committed so the app
+runs on clone. After changing translatable strings, re-extract and compile:
+
+```bash
+pybabel extract -F babel.cfg -o app/locales/messages.pot app
+pybabel update  -i app/locales/messages.pot -d app/locales      # merge into .po
+# ...translate the new msgstr entries in app/locales/<locale>/LC_MESSAGES/messages.po
+pybabel compile -d app/locales                                   # write .mo
+```
+
+Add a language: append it to `SUPPORTED_LOCALES`, `pybabel init -l <code> …`,
+translate, compile; add it to the SPA catalog in `frontend/src/i18n.ts`.
+
 ## Project layout
 
 ```

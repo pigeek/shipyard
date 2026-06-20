@@ -1,0 +1,69 @@
+#: app/features/notifications/tasks.py:25
+#: app/features/notifications/tasks.py:26
+msgid "Welcome aboard!"
+msgstr ""
+
+#: app/features/notifications/tasks.py:41
+msgid "Verify your email"
+msgstr ""
+
+#: app/features/notifications/tasks.py:43
+msgid "Confirm your email address:"
+msgstr ""
+
+#: app/features/notifications/tasks.py:44
+msgid "Verify email"
+msgstr ""
+
+#: app/features/notifications/tasks.py:60
+msgid "Reset your password"
+msgstr ""
+
+#: app/features/notifications/tasks.py:62
+msgid "Reset your password:"
+msgstr ""
+
+#: app/features/notifications/tasks.py:63
+msgid "Choose a new password"
+msgstr ""
+
+#: app/web/templates/base.html:15
+msgid "App"
+msgstr ""
+
+#: app/web/templates/base.html:16
+msgid "Teams"
+msgstr ""
+
+#: app/web/templates/base.html:20
+msgid "Log out"
+msgstr ""
+
+#: app/web/templates/base.html:23
+msgid "Log in"
+msgstr ""
+
+#: app/web/templates/base.html:24
+msgid "Sign up"
+msgstr ""
+
+#: app/web/templates/index.html:4
+msgid "A FastAPI boilerplate with configurable SSR + REST surfaces."
+msgstr ""
+
+#: app/web/templates/index.html:6
+msgid "Get started"
+msgstr ""
+
+#: app/web/templates/index.html:6
+msgid "or"
+msgstr ""
+
+#: app/web/templates/index.html:6
+msgid "log in"
+msgstr ""
+
+#: app/web/templates/index.html:8
+msgid "Welcome back"
+msgstr ""
+

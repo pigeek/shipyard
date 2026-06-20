@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
     stripe_customer_id: str | None = None
+    locale: str | None = None
 
 
 class UserCreate(schemas.BaseUserCreate):
@@ -13,7 +14,7 @@ class UserCreate(schemas.BaseUserCreate):
 
 
 class UserUpdate(schemas.BaseUserUpdate):
-    pass
+    locale: str | None = None
 
 
 class TokenPair(BaseModel):

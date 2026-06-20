@@ -1,7 +1,29 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getMe, logoutEverywhere, type Me } from "./api";
+import { SUPPORTED, setLocale } from "./i18n";
+
+function LanguageSwitch() {
+  const { t, i18n } = useTranslation();
+  return (
+    <p style={{ fontSize: "0.85rem" }}>
+      {t("language")}:{" "}
+      {SUPPORTED.map((lng) => (
+        <button
+          key={lng}
+          onClick={() => setLocale(lng)}
+          disabled={i18n.resolvedLanguage === lng}
+          style={{ marginRight: 6 }}
+        >
+          {lng}
+        </button>
+      ))}
+    </p>
+  );
+}
 
 export default function App() {
+  const { t } = useTranslation();
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,27 +35,28 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <main style={wrap}>Loading…</main>;
+  if (loading) return <main style={wrap}>{t("loading")}</main>;
 
   if (!me) {
     const next = encodeURIComponent("/app");
     return (
       <main style={wrap}>
-        <h1>Shipyard</h1>
-        <p>You are not signed in.</p>
-        <a href={`/auth/login?next=${next}`}>Log in</a>
+        <h1>{t("appName")}</h1>
+        <p>{t("notSignedIn")}</p>
+        <a href={`/auth/login?next=${next}`}>{t("logIn")}</a>
+        <LanguageSwitch />
       </main>
     );
   }
 
   return (
     <main style={wrap}>
-      <h1>Welcome back</h1>
+      <h1>{t("welcomeBack")}</h1>
       <p>
-        Signed in as <strong>{me.email}</strong>
-        {me.is_verified ? "" : " (unverified)"}
+        {t("signedInAs")} <strong>{me.email}</strong>
+        {me.is_verified ? "" : t("unverified")}
       </p>
-      <p>This React shell runs same-origin on the cookie session — no token in JS.</p>
+      <p>{t("cookieNote")}</p>
       <button
         onClick={async () => {
           // Revokes every session server-side; the now-dead cookie is ignored.
@@ -41,8 +64,9 @@ export default function App() {
           window.location.href = "/";
         }}
       >
-        Log out everywhere
+        {t("logOutEverywhere")}
       </button>
+      <LanguageSwitch />
     </main>
   );
 }

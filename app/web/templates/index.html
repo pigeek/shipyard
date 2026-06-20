@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>{{ app_name }}</h1>
-  <p>A FastAPI boilerplate with configurable SSR + REST surfaces.</p>
+  <p>{{ _("A FastAPI boilerplate with configurable SSR + REST surfaces.") }}</p>
   {% if not current_user %}
-    <p><a href="/auth/register">Get started</a> or <a href="/auth/login">log in</a>.</p>
+    <p><a href="/auth/register">{{ _("Get started") }}</a> {{ _("or") }} <a href="/auth/login">{{ _("log in") }}</a>.</p>
   {% else %}
-    <p>Welcome back, {{ current_user.email }}.</p>
+    <p>{{ _("Welcome back") }}, {{ current_user.email }}.</p>
   {% endif %}
 {% endblock %}

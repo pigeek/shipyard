@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     auth_cookie_enabled: bool = True
     auth_bearer_enabled: bool = True
 
+    # --- i18n (see app/core/i18n.py) ---
+    default_locale: str = "en"
+    # Locales the app will negotiate to; "en" is the source language (no .mo).
+    supported_locales: list[str] = ["en", "fr"]
+
     # --- CORS (separate-origin / dev SPA) ---
     cors_origins: list[str] = []
 

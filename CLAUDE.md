@@ -98,6 +98,19 @@ docs/adr/       architecture decisions
   channel), `realtime.push_to_user()` to send, and a `POST /api/v1/notifications/echo`
   demo that round-trips a message back to the caller's own socket.
 
+## Internationalization (i18n)
+
+- `app/core/i18n.py` owns locale **negotiation** (`user.locale` → `locale` cookie
+  → `Accept-Language` → `default_locale`) and gettext catalog loading. Only ever
+  resolves a `supported_locales` value; the source locale (`en`) needs no catalog.
+- **SSR**: `web/templating.render` injects per-request `_`/`_n` into the Jinja
+  context (no global install → no cross-request races); templates use
+  `{{ _("…") }}` / `{% trans %}`. **Emails** (worker, no request) translate
+  against `user.locale`. **SPA**: react-i18next (`frontend/src/i18n.ts`), sharing
+  the same `locale` cookie; `GET /i18n/set?lng=…` flips it for both surfaces.
+- Catalogs: `app/locales/<locale>/LC_MESSAGES/messages.{po,mo}`. The `.mo` is
+  **committed** (runs on clone); regenerate with Babel (`babel.cfg`) — see README.
+
 ## Conventions
 
 - Service layer holds logic; routers stay thin. Tenant-scoped queries filter by
@@ -113,6 +126,7 @@ uv venv && VIRTUAL_ENV=.venv uv pip install -e ".[dev]"   # install (note VIRTUA
 .venv/bin/ruff check app tests alembic && .venv/bin/ruff format --check app tests alembic && .venv/bin/mypy app   # lint + format + types (matches CI)
 .venv/bin/python -m pytest -q                             # tests (fast: ~1s, in-memory SQLite)
 pnpm -C frontend install && pnpm -C frontend run build   # build SPA → app/web/spa (pnpm)
+.venv/bin/pybabel compile -d app/locales                  # compile i18n catalogs (.po → .mo)
 docker compose up --build                                 # full stack (api/worker/pg/redis)
 python -m app.cli createsuperuser <email> <password>      # admin user (avoid .local TLD)
 ```

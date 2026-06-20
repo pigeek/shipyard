@@ -5,6 +5,7 @@ from fastapi import Request
 from starlette.templating import Jinja2Templates, _TemplateResponse
 
 from app.core.config import settings
+from app.core.i18n import get_translations, negotiate_locale
 from app.web.csrf import get_csrf_token
 from app.web.spa import spa_is_built
 
@@ -21,6 +22,10 @@ def _template_dirs() -> list[str]:
 
 
 templates = Jinja2Templates(directory=_template_dirs())
+# i18n: enable {% trans %} / {{ _() }}. Translations are injected per-request in
+# render() (not installed globally), so concurrent requests can't race on locale.
+templates.env.add_extension("jinja2.ext.i18n")
+templates.env.install_null_translations(newstyle=True)  # type: ignore[attr-defined]
 templates.env.globals["app_name"] = settings.app_name
 # Whether the React SPA is available to link to from SSR pages (Phase 7.4).
 templates.env.globals["spa_enabled"] = spa_is_built()
@@ -39,10 +44,20 @@ def render(
     status_code: int = 200,
     headers: dict[str, str] | None = None,
 ) -> _TemplateResponse:
-    """Render a Jinja template, auto-injecting csrf_token and the request."""
+    """Render a Jinja template, auto-injecting csrf_token, i18n, and the request."""
+    current_user = getattr(request.state, "current_user", None)
+    locale = negotiate_locale(request, getattr(current_user, "locale", None))
+    trans = get_translations(locale)
     ctx = {
         "csrf_token": get_csrf_token(request),
-        "current_user": getattr(request.state, "current_user", None),
+        "current_user": current_user,
+        # Per-request gettext callables (newstyle) — used by {{ _() }} / {% trans %}.
+        "_": trans.gettext,
+        "gettext": trans.gettext,
+        "_n": trans.ngettext,
+        "ngettext": trans.ngettext,
+        "current_locale": locale,
+        "supported_locales": settings.supported_locales,
         **(context or {}),
     }
     return templates.TemplateResponse(request, name, ctx, status_code=status_code, headers=headers)
