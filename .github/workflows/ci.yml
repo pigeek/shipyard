@@ -31,8 +31,10 @@ jobs:
     env:
       ENVIRONMENT: testing
       SECRET_KEY: ci-secret-key-that-is-long-enough-32bytes
-      DATABASE_URL: postgresql+asyncpg://shipyard:shipyard@localhost:5432/shipyard_test
       REDIS_URL: redis://localhost:6379/0
+      # NB: DATABASE_URL is intentionally NOT set job-wide. The test suite uses an
+      # in-memory SQLite (conftest sets it via setdefault); only the migration
+      # check below points at the Postgres service, to keep tests fast + isolated.
 
     steps:
       - uses: actions/checkout@v4
@@ -67,6 +69,8 @@ jobs:
         run: mypy app
 
       - name: Run migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://shipyard:shipyard@localhost:5432/shipyard_test
         run: alembic upgrade head
 
       - name: Tests
