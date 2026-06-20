@@ -16,6 +16,7 @@ class FeatureModule:
     Surfaces are implicit: whichever routers are provided get mounted.
     - ``api_router``   -> mounted under /api/v1   (REST/JSON)
     - ``ssr_router``   -> mounted at root         (SSR/HTML)
+    - ``ws_router``    -> mounted under /ws        (WebSocket / ASGI push)
     - ``admin_views``  -> registered with SQLAdmin
     - ``tasks``/``cron`` -> registered with the arq worker
     """
@@ -23,6 +24,7 @@ class FeatureModule:
     name: str
     api_router: APIRouter | None = None
     ssr_router: APIRouter | None = None
+    ws_router: APIRouter | None = None
     admin_views: Sequence[type] = field(default_factory=tuple)
     tasks: Sequence[Callable[..., Any]] = field(default_factory=tuple)
     cron: Sequence[Any] = field(default_factory=tuple)

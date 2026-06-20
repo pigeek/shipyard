@@ -1,7 +1,8 @@
-from fastapi import Depends, Request
+from fastapi import Depends, Request, WebSocket
 
-from app.features.users.manager import fastapi_users
+from app.features.users.manager import UserManager, fastapi_users, get_user_manager
 from app.features.users.models import User
+from app.features.users.security import COOKIE_NAME, get_jwt_strategy
 
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
@@ -25,6 +26,31 @@ class RequiresLogin(Exception):
 
     def __init__(self, next_url: str) -> None:
         self.next_url = next_url
+
+
+async def ws_current_user(
+    websocket: WebSocket,
+    user_manager: UserManager = Depends(get_user_manager),
+) -> User | None:
+    """Authenticate a WebSocket connection, returning the user or ``None``.
+
+    Browsers can't set headers on a WebSocket, so the same-origin SSR/SPA relies
+    on the httpOnly session **cookie** (sent automatically). Non-browser clients
+    may instead pass the bearer token as ``?token=`` or an ``Authorization``
+    header. The token is validated with the same revocable JWT strategy the REST
+    API uses, so a revoked token can't open a socket.
+    """
+    token = websocket.cookies.get(COOKIE_NAME) or websocket.query_params.get("token")
+    if token is None:
+        auth = websocket.headers.get("authorization", "")
+        if auth.lower().startswith("bearer "):
+            token = auth[7:]
+    if token is None:
+        return None
+    user = await get_jwt_strategy().read_token(token, user_manager)
+    if user is None or not user.is_active:
+        return None
+    return user
 
 
 async def ssr_required_user(request: Request, user: User | None = Depends(_optional_user)) -> User:

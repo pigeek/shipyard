@@ -11,6 +11,7 @@ config:
 
 - `api.py` (router) → mounted at `/api/v1/<feature>` (REST/JSON)
 - `views.py` (router) → mounted at `/<feature>` (SSR HTML, Jinja + HTMX)
+- `ws.py` (router) → mounted at `/ws/<feature>` (WebSocket / ASGI push)
 - `admin.py` (ModelViews) → registered with SQLAdmin
 - `tasks.py` → arq task functions / cron
 
@@ -82,6 +83,20 @@ docs/adr/       architecture decisions
   (`cleanup_orphaned_uploads`) that drops never-confirmed `pending` rows past
   `orphan_upload_max_age`. Bucket creation happens on app startup for non-memory
   providers (`main.py` lifespan).
+
+## Realtime (WebSocket / ASGI push)
+
+- `app/core/realtime.py` is an **infra seam** (parallels `core/storage.py`): a
+  process-wide `RealtimeHub` tracks local WebSocket connections by channel and
+  delivers messages from `publish()`. `realtime_provider=memory` (default) is
+  in-process (tests/single worker); `realtime_provider=redis` relays via pub/sub
+  so push works across workers. Started/stopped in `main.py` lifespan.
+- A feature exposes a socket via `ws.py` (`ws_router` → mounted at `/ws/<feature>`).
+  Sockets authenticate with the same revocable JWT as REST/SSR (cookie for
+  browsers, `?token=`/bearer for native) via `users.dependencies.ws_current_user`.
+- The `notifications` feature is the reference: `/ws/notifications` (per-user
+  channel), `realtime.push_to_user()` to send, and a `POST /api/v1/notifications/echo`
+  demo that round-trips a message back to the caller's own socket.
 
 ## Conventions
 

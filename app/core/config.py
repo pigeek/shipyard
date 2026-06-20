@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # --- Redis (cache + arq broker) ---
     redis_url: str = "redis://localhost:6379/0"
 
+    # --- Realtime (WebSocket / ASGI push; see app/core/realtime.py) ---
+    # "memory" (default) is in-process — fine for tests + single-process dev.
+    # "redis" fans messages out across workers via pub/sub (compose sets it).
+    realtime_provider: Literal["memory", "redis"] = "memory"
+
     # --- Auth ---
     access_token_lifetime_seconds: int = 3600
     refresh_token_lifetime_seconds: int = 60 * 60 * 24 * 30  # 30 days

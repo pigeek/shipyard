@@ -3,6 +3,8 @@ x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY:-dev-secret-change-me}
   DATABASE_URL: postgresql+asyncpg://shipyard:shipyard@postgres:5432/shipyard
   REDIS_URL: redis://redis:6379/0
+  # Fan WebSocket push across workers via Redis pub/sub (memory = single-process).
+  REALTIME_PROVIDER: redis
   BASE_URL: http://localhost:8000
   EMAIL_BACKEND: console
   STRIPE_API_KEY: ${STRIPE_API_KEY:-}

@@ -10,6 +10,7 @@ from starlette.staticfiles import StaticFiles
 
 from app.admin.setup import setup_admin
 from app.core.config import settings
+from app.core.realtime import get_realtime_hub
 from app.core.redis import close_arq_pool, init_arq_pool
 from app.core.registry import discover_features
 from app.core.storage import get_storage
@@ -28,7 +29,10 @@ async def lifespan(app: FastAPI):
         # Create the bucket on boot for real backends; the memory backend is a
         # no-op, so tests/keyless dev stay infra-free.
         await get_storage().ensure_bucket()
+    # Start the realtime hub's pub/sub subscriber (no-op for the memory provider).
+    await get_realtime_hub().start()
     yield
+    await get_realtime_hub().stop()
     await close_arq_pool(app)
 
 
@@ -75,6 +79,8 @@ def create_app() -> FastAPI:
             app.include_router(feature.api_router, prefix="/api/v1")
         if feature.ssr_router is not None:
             app.include_router(feature.ssr_router)
+        if feature.ws_router is not None:
+            app.include_router(feature.ws_router, prefix="/ws")
 
     setup_admin(app, features)
     mount_spa(app)
