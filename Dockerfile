@@ -1,10 +1,11 @@
 # --- Stage 1: build the React SPA bundle into app/web/spa ---
 FROM node:22-slim AS spa
 WORKDIR /spa
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm install -g pnpm@11.8.0
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
-RUN npm run build   # vite emits to ../app/web/spa via outDir
+RUN pnpm run build   # vite emits to ../app/web/spa via outDir
 # outDir resolves relative to /spa, so the bundle lands at /app/web/spa
 # (kept out of the build context as an image artifact below).
 

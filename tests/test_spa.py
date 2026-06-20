@@ -7,7 +7,7 @@ pytestmark = pytest.mark.asyncio
 # been built (CI builds it before the suite); otherwise they skip so an SSR-only
 # checkout stays green.
 needs_bundle = pytest.mark.skipif(
-    not spa_is_built(), reason="SPA bundle not built (run `npm --prefix frontend run build`)"
+    not spa_is_built(), reason="SPA bundle not built (run `pnpm -C frontend run build`)"
 )
 
 

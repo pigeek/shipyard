@@ -8,7 +8,7 @@ Vite builds a static bundle into ``app/web/spa`` (``base: "/app/"``), so:
   owns navigation (deep links, refreshes).
 
 If the bundle hasn't been built (e.g. an SSR-only deployment, or local dev before
-``npm run build``), nothing is mounted and ``/app`` simply 404s — consistent with
+``pnpm run build``), nothing is mounted and ``/app`` simply 404s — consistent with
 the implicit-surface philosophy.
 """
 

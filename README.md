@@ -78,13 +78,14 @@ python -m app.cli createsuperuser admin@example.com
 
 ### Frontend (React SPA at `/app`)
 
-The SPA is a Vite + React bundle served same-origin by FastAPI. Build it (the
-Docker image and CI do this automatically):
+The SPA is a Vite + React bundle served same-origin by FastAPI, managed with
+[pnpm](https://pnpm.io). Build it (the Docker image and CI do this
+automatically):
 
 ```bash
-npm --prefix frontend install
-npm --prefix frontend run build      # → app/web/spa (served at /app)
-npm --prefix frontend run dev        # or: Vite dev server, proxying /api to :8000
+pnpm -C frontend install
+pnpm -C frontend run build      # → app/web/spa (served at /app)
+pnpm -C frontend run dev        # or: Vite dev server, proxying /api to :8000
 ```
 
 If the bundle isn't built, `/app` simply 404s and the SPA tests skip — the SSR

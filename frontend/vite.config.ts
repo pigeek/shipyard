@@ -12,7 +12,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    // `npm run dev` against a locally-running API (separate origin → see CORS,
+    // `pnpm run dev` against a locally-running API (separate origin → see CORS,
     // ADR 0001 Phase 7.5). Cookies ride along thanks to allow-credentials.
     proxy: {
       "/api": { target: "http://localhost:8000", changeOrigin: true },

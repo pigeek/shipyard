@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Same-origin React SPA served by FastAPI at /app (ADR 0001).",
+  "packageManager": "pnpm@11.8.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
