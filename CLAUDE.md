@@ -28,8 +28,8 @@ Stripe. Tooling: uv, ruff, mypy, pytest.
 ## Layout
 
 ```
-app/core/       config, db, redis/arq, registry, models (Base/UUID/Timestamp), health
-app/features/   users, teams, billing, notifications
+app/core/       config, db, redis/arq, registry, models (Base/UUID/Timestamp), storage, health
+app/features/   users, teams, billing, notifications, files
 app/admin/      SQLAdmin mount + superuser auth backend
 app/web/        shared Jinja layout, static, CSRF, templating
 app/main.py     app factory (discovers + mounts features, admin, redirect handler)
@@ -61,6 +61,28 @@ docs/adr/       architecture decisions
 - Social login (Phase 7.7) is mounted only when a provider is configured
   (`GOOGLE_OAUTH_*`); linked accounts live in `oauth_account`.
 
+## Object storage (S3 / MinIO)
+
+- `app/core/storage.py` is an **infra seam** (parallels `core/redis.py`): a
+  `StorageBackend` Protocol with `S3Backend` (boto3, AWS S3 in prod / MinIO in
+  dev) and `MemoryBackend` (tests + keyless dev), behind a `get_storage()`
+  `lru_cache` factory keyed on `settings.storage_provider` (`memory` default; the
+  compose stack sets `s3`). boto3 calls run in `asyncio.to_thread`.
+- Private-bucket pattern: objects are never public. **Reads** go through
+  short-lived presigned GET URLs; **writes** go through a scoped, short-lived
+  presigned **POST** form the browser submits directly (bytes never transit the
+  API). The POST policy pins content-type + content-length-range, so the bucket
+  itself rejects oversized/wrong-type uploads. Two boto3 clients exist so URLs
+  are signed for a host the *browser* can reach (`s3_public_endpoint_url`).
+- The `files` feature (`app/features/files/`) is the usable surface over the
+  seam: `StoredFile` model (configurable scope — nullable `owner_id` **and**
+  `team_id`; access honors whichever is set), REST lifecycle under
+  `/api/v1/files` (`POST` start → `POST /{id}/confirm` → `GET /{id}/download-url`
+  → `GET` list → `DELETE`), a read-only admin view, and an hourly arq cron
+  (`cleanup_orphaned_uploads`) that drops never-confirmed `pending` rows past
+  `orphan_upload_max_age`. Bucket creation happens on app startup for non-memory
+  providers (`main.py` lifespan).
+
 ## Conventions
 
 - Service layer holds logic; routers stay thin. Tenant-scoped queries filter by
@@ -89,7 +111,8 @@ a file-based test DB or default Argon2 cost in tests — that was the 2.5-min su
 
 ## Status
 
-Phases 0–6 + **Phase 7 (frontend shells & auth hardening, all of 7.1–7.7)**:
-**done, lint + mypy + pytest green** (39 tests, migrations verified up/down).
-See `docs/PLAN.md` and `docs/adr/0001-frontend-auth-shells.md`. The React SPA
-bundle is a build artifact (built in CI / the Docker image), not committed.
+Phases 0–6 + **Phase 7 (frontend shells & auth hardening, all of 7.1–7.7)** +
+**object storage (S3/MinIO seam + `files` feature)**: **done, lint + mypy +
+pytest green** (51 tests, migrations verified up/down). See `docs/PLAN.md` and
+`docs/adr/0001-frontend-auth-shells.md`. The React SPA bundle is a build
+artifact (built in CI / the Docker image), not committed.

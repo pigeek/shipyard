@@ -12,6 +12,7 @@ from app.admin.setup import setup_admin
 from app.core.config import settings
 from app.core.redis import close_arq_pool, init_arq_pool
 from app.core.registry import discover_features
+from app.core.storage import get_storage
 from app.features.users.dependencies import RequiresLogin, load_current_user
 from app.web.api_csrf import ApiCsrfMiddleware
 from app.web.spa import mount_spa
@@ -23,6 +24,10 @@ STATIC_DIR = Path(__file__).resolve().parent / "web" / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_arq_pool(app)
+    if settings.storage_provider != "memory":
+        # Create the bucket on boot for real backends; the memory backend is a
+        # no-op, so tests/keyless dev stay infra-free.
+        await get_storage().ensure_bucket()
     yield
     await close_arq_pool(app)
 

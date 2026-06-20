@@ -47,6 +47,22 @@ class Settings(BaseSettings):
     smtp_tls: bool = False
     email_from: str = "no-reply@shipyard.local"
 
+    # --- Object storage (S3 / MinIO; see app/core/storage.py) ---
+    # "memory" (default) keeps dev/tests infra-free; compose sets "s3".
+    storage_provider: Literal["memory", "s3"] = "memory"
+    s3_endpoint_url: str | None = None  # e.g. http://minio:9000; None = real AWS
+    # Endpoint baked into presigned URLs handed to the browser. Needed when the
+    # API reaches MinIO as http://minio:9000 but the browser only knows localhost.
+    s3_public_endpoint_url: str | None = None
+    s3_bucket: str = "shipyard"
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_region: str = "us-east-1"
+    presigned_url_ttl: int = 3600  # presigned GET (download) expiry
+    upload_credential_ttl: int = 600  # presigned POST (upload) expiry (10 min)
+    max_upload_size: int = 10 * 1024 * 1024  # 10 MB ceiling enforced by the bucket
+    orphan_upload_max_age: int = 24 * 3600  # delete never-confirmed uploads after 24h
+
     # --- Stripe ---
     stripe_api_key: str = ""
     stripe_webhook_secret: str = ""
